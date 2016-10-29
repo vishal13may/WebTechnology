@@ -1,0 +1,11 @@
+Homework 6: Server-side Scripting
+
+1. Objectives
+? Get experience with the PHP programming language
+? Get experience with the Markit on Demand APIs
+? Get experience using XML and JSON parsers in PHP.
+
+2. Description
+In this exercise, you are asked to create a webpage that allows you to search for stock
+information using the Markit on Demand APIs, and the results will be displayed in tabular
+format.
