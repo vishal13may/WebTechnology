@@ -1,0 +1,7 @@
+Homework 9: Stock Search Android App with Facebook Post – A Mobile Phone Exercise
+
+1. Objectives
+- Become familiar with Android Studio, Android App development and Facebook SDK for
+Android.
+- Build a good-looking Android app using the Android SDK.
+- Add social networking features using the Facebook SDK.

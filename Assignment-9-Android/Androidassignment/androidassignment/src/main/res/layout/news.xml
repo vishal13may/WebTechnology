@@ -1,0 +1,58 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:weightSum="4"
+    android:layout_marginLeft="10dp"
+    android:layout_marginRight="10dp"
+    android:paddingTop="10dp"
+    android:paddingRight="10dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_weight="1"
+        android:layout_marginTop="2dp"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:id="@+id/textViewTitle"
+        android:layout_gravity="center_horizontal"
+        android:textStyle="bold"
+        android:layout_marginLeft="6dp"
+        android:layout_marginRight="0dp"
+        android:textSize="24dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginTop="2dp"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:id="@+id/textViewDescription"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginLeft="6dp"
+        android:textColor="#858484"
+        android:textSize="21dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_weight="1"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:layout_marginTop="6dp"
+        android:id="@+id/textViewPublisher"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginLeft="6dp"
+        android:textColor="#858484"
+        android:textSize="16dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_marginTop="4dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:id="@+id/textViewDate"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginLeft="6dp"
+        android:textColor="#858484"
+        android:textSize="16dp"
+        android:layout_marginBottom="5dp" />
+</LinearLayout>

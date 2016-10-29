@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Assignment 8</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <script src="https://code.jquery.com/jquery-1.12.0.min.js"></script>
+    <script src="https://code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+    <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+    <script src="https://code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+    <link href="https://gitcdn.github.io/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
+    <script src="https://gitcdn.github.io/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js"></script>
+    <script src="https://code.highcharts.com/stock/highstock.js"></script>
+    <script src="https://code.highcharts.com/stock/modules/exporting.js"></script>
+    <script src="http://momentjs.com/downloads/moment.js"></script>
+
+    <style type=text/css>
+        body {
+            background-color: #00417D;
+        }
+        
+        .form-group.required .control-label:after {
+            content: "*";
+            color: red;
+        }
+        
+        .form-group #lblInvalidEntry {
+            color: red;
+            text-align: left;
+        }
+        
+        .row {
+            margin-bottom: 30px
+        }
+        
+        .glyphicon-star {
+            color: white;
+            text-shadow: 0 0 black, 0 0 black, 0 0 black, 0 0 black, 0 0 black;
+        }
+        
+        #btnFacebookShare {
+            background: url("fb.jpg") no-repeat;
+            width: 40px;
+            height: 33px;
+            background-size: 40px 31px;
+        }
+        
+        @media (max-width: 980px) {
+            .marginTop {
+                margin-top: 10px;
+            }
+        }
+        
+        @media (max-width: 540px) {
+            .mobileHide {
+                display: none;
+            }
+        }
+
+    </style>
+    <script>
+        var symbolValue;
+        var stockDetailsForLocalStorage = {};
+        var setIntervalId;
+
+        window.fbAsyncInit = function() {
+            FB.init({
+                appId: '556746571162105',
+                xfbml: true,
+                version: 'v2.5'
+            });
+        };
+
+        (function(d, s, id) {
+            var js, fjs = d.getElementsByTagName(s)[0];
+            if (d.getElementById(id)) {
+                return;
+            }
+            js = d.createElement(s);
+            js.id = id;
+            js.src = "https://connect.facebook.net/en_US/all.js";
+            fjs.parentNode.insertBefore(js, fjs);
+        }(document, 'script', 'facebook-jssdk'));
+
+        var localStorageJsonString;
+        $(function() {
+            $("#txtCompanyName").autocomplete({
+                source: function(request, response) {
+                    $.ajax({
+                        url: "http://stockinfo-1272.appspot.com/stockInfo.php",
+                        dataType: "json",
+                        data: {
+                            autoCompleteSymbol: request.term
+                        },
+                        beforeSend: function() {
+                            $('#lblInvalidEntry').text("");
+                        },
+                        success: function(data) {
+                            var obj = JSON.parse(data);
+                            var arr = [];
+                            for (var i = 0; i < obj.length; i++) {
+                                arr.push(obj[i].Symbol + " - " + obj[i].Name + " ( " + obj[i].Exchange + " )");
+                            }
+                            response(arr);
+                        }
+                    });
+                },
+                select: function(event, ui) {
+                    if (ui.item) {
+                        var txt = ui.item.value.split(" ");
+                        document.getElementById('txtCompanyName').value = txt[0];
+                    } else {
+
+                    }
+                    return false;
+                },
+                change: function(event, ui) {
+                    if (!ui.item) {
+                        $('#lblInvalidEntry').text("Select a valid Entry");
+                    } else {
+                        var txt = ui.item.value.split(" ");
+                        $('#txtCompanyName').val(txt[0]);
+                    }
+                }
+            });
+        });
+
+    </script>
+</head>
+
+<body>
+    <div class="container">
+        <div class="panel panel-default" style="margin-top:20px;">
+            <div class="panel-body">
+                <div class=" col-md-12 col-sm-12 col-xs-12" style="margin-bottom:10px;">
+                    <h4><strong><center>Stock Market Search</center></strong></h4>
+                </div>
+                <form class="form-horizontal" role="form" name="formStockSearch" id="frmStockSearch" onsubmit="return false">
+                    <div class="form-group required">
+                        <label class="control-label col-sm-12 col-xs-12 col-md-3" style="text-align: left;" for="txtCompanyName">Enter the stock name or symbol:</label>
+                        <div class="col-xs-12 col-sm-12 col-md-6">
+                            <input type="text" class="form-control" id="txtCompanyName" placeholder="Apple Inc or AAPL" required>
+                        </div>
+                        <div class="col-sm-12 col-xs-12 col-md-3 marginTop">
+                            <button class="btn btn-info" type="submit">
+                                <span class="glyphicon glyphicon-search"></span> Get Quote
+                            </button>
+                            <button type="button" class="btn btn-default" id="btnClear">
+                                <span class="glyphicon glyphicon-refresh"></span> Clear
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div style="margin-top: -7px;" class="col-md-offset-3 col-md-6 col-sm-12 col-xs-12">
+                            <label class="control-label" id="lblInvalidEntry"></label>
+                        </div>
+                        <div class="col-md-3 col-sm-12 col-xs-12">
+                            <strong>Powered By:</strong>
+                            <a href="http://dev.markitondemand.com/MODApis/"> <img src="http://cs-server.usc.edu:45678/hw/hw8/images/mod-logo.png" height="16" /></a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <hr>
+
+        <div id="myCarousel" class="carousel slide" data-interval="false">
+            <!-- Carousel items -->
+            <div class="carousel-inner">
+                <div class="item active">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h3 class="panel-title">Favorite List</h3>
+                            <div class="pull-right" style="margin-top: -25px;">
+                                <span class="mobileHide">Automatic Refresh:</span>
+                                <div class="checkbox-inline" title="Automatic Refresh after 5 seconds">
+                                    <input id="toggleRefreshStockTable" type="checkbox" data-toggle="toggle">
+                                </div>
+                                <button id="btnRefreshStockTable" type="button" class="btn btn-default btn-md" title="Refresh">
+                                    <span class="glyphicon glyphicon-refresh"></span>
+                                </button>
+                                <a class="btn btn-default btn-md" id="btnNextSlide" title="Go to stock information">
+                                    <span class="glyphicon glyphicon-chevron-right"></span>
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="panel-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped" id="tblBookmark">
+                                    <tbody>
+                                        <tr>
+                                            <th>Symbol</th>
+                                            <th>Company Name</th>
+                                            <th>Stock Price</th>
+                                            <th>Change(Change Percent)</th>
+                                            <th>Market Cap</th>
+                                            <th></th>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="item">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <a id="btnPrevSlide" style="margin-top:-5px;" class="btn btn-default btn-sm pull-left">
+                                <span class="glyphicon glyphicon-chevron-left"></span>
+                            </a>
+                            <center><strong>Stock Details </strong></center>
+                        </div>
+                        <div class="panel-body">
+                            <ul class="nav nav-pills">
+                                <li class="active">
+                                    <a href="#divStockDetailsResult" id="btnCurrentStock" data-toggle="tab">
+                                        <span class="glyphicon glyphicon-dashboard"></span>
+                                        <span class="mobileHide"> Current</span> Stock
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="#divChart" id="historicalChart" data-toggle="tab">
+                                        <span class="glyphicon glyphicon-stats"></span>
+                                        <span class="mobileHide">Historical </span>Charts
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="#divNewsFeeds" id="newsFeeds" data-toggle="tab">
+                                        <span class="glyphicon glyphicon-link"></span>
+                                        <span class="mobileHide">News </span>Feeds
+                                    </a>
+                                </li>
+                            </ul>
+                            <hr style="width: 100%; color: black; height: 1px;" />
+                            <div class="tab-content">
+                                <div class="tab-pane fade in active" id="divStockDetailsResult">
+                                    <div class="col-md-12 col-sm-12 col-xs-12" style="padding:0px 0px 10px;">
+                                        <div class="pull-left"><strong>Stock Details</strong></div>
+                                        <div class="pull-right">
+                                            <button type="button" class="btn btn-primary" id="btnFacebookShare"></button>
+                                            <button type="button" id="btnBookmark" class="btn btn-default btn-md">
+                                                <span class="glyphicon glyphicon-star"></span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="clear"></div>
+                                    <div class="row">
+                                        <div class="col-md-6 col-sm-12 col-xs-12" id="divStockDetailsTable">
+                                        </div>
+                                        <div class="col-md-6 col-sm-12 col-xs-12" id="divStockDetailsResultImage">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="tab-pane fade" id="divChart">
+                                </div>
+                                <div class="tab-pane fade" id="divNewsFeeds">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.getElementById('btnClear').addEventListener('click', clear);
+
+        function clear() {
+            document.getElementById('txtCompanyName').value = '';
+            $("#btnNextSlide").attr('disabled', 'disabled');
+        }
+
+        function fixDate(dateIn) {
+            var dat = new Date(dateIn);
+            return Date.UTC(dat.getFullYear(), dat.getMonth(), dat.getDate());
+        }
+
+        $('#toggleRefreshStockTable').change(function(evt) {
+            if ($('#toggleRefreshStockTable').prop('checked')) {
+                setIntervalId = setInterval(function() {
+                    refreshStockTable()
+                }, 5000);
+            } else {
+                clearInterval(setIntervalId);
+            }
+        });
+
+        $('#btnRefreshStockTable').click(function(evt) {
+            refreshStockTable();
+        });
+
+        $('#btnCurrentStock').click(function(evt) {});
+
+        $('#btnFacebookShare').click(function(evt) {
+            var obj = {
+                method: 'feed',
+                link: 'http://dev.markitondemand.com/MODApis/',
+                picture: 'http://chart.finance.yahoo.com/t?s=' + stockDetailsForLocalStorage.Symbol + '&lang=en-US&width=400&height=300',
+                name: 'Current Stock Price of ' + stockDetailsForLocalStorage.Name + ' is $' + stockDetailsForLocalStorage.LastPrice,
+                caption: 'Last Trade Price: $' + stockDetailsForLocalStorage.LastPrice + ', ' + 'CHANGE: ' + Math.round(stockDetailsForLocalStorage.Change * 100) / 100 + ' (' + Math.round(Number(stockDetailsForLocalStorage.ChangePercent) * 100) / 100 + '%)',
+                description: 'Stock information of ' + stockDetailsForLocalStorage.Name + ' (' + stockDetailsForLocalStorage.Symbol + ')'
+            };
+
+            function callback(response) {
+                if (typeof response === "undefined") {
+                    alert("Not Posted.");
+                } else if (response.error_code) {
+                    alert("Not Posted.");
+                } else {
+                    alert("Posted Successfully");
+                }
+            }
+            FB.ui(obj, callback);
+        });
+
+        $('#btnBookmark').click(function(evt) {
+            var color = $(".glyphicon-star").css("color");
+            if (color.replace(/\D+/g, '') === '2552550') {
+                $(".glyphicon-star").css("color", "white");
+                var arr = JSON.parse(localStorage.getItem("favoriteStock"));
+                for (var i = arr.length - 1; i >= 0; i--) {
+                    if (arr[i] == symbolValue) {
+                        arr.splice(i, 1);
+                    }
+                }
+                localStorage.removeItem("favoriteStock");
+                localStorage.setItem("favoriteStock", JSON.stringify(arr));
+                loadLocalStorage();
+            } else if (color.replace(/\D+/g, '') === '255255255') {
+                $(".glyphicon-star").css("color", "yellow");
+                if (typeof(Storage) !== "undefined") {
+                    if (localStorage.getItem("favoriteStock")) {
+                        var str = localStorage.getItem("favoriteStock");
+                        var arr = JSON.parse(str);
+                        arr.push(stockDetailsForLocalStorage.Symbol);
+                        localStorage.setItem("favoriteStock", JSON.stringify(arr));
+                    } else {
+                        var arr = [];
+                        arr.push(stockDetailsForLocalStorage.Symbol);
+                        localStorage.setItem("favoriteStock", JSON.stringify(arr));
+                    }
+
+
+                    var tableRow = $('<tr class="bookMarkRow">');
+                    var obj = stockDetailsForLocalStorage;
+                    tableRow.append('<td class="one">' + '<a href="#" id="symbolLink" onclick="func(this);">' + obj.Symbol + '</a>' + '</td>');
+                    tableRow.append('<td>' + obj.Name + '</td>');
+                    tableRow.append('<td class="bookMarkStockPrice">$ ' + obj.LastPrice + '</td>');
+
+                    var changePercent = '<td class="bookMarkChangePercent">';
+                    if (Number(obj.ChangePercent) > 0) {
+                        changePercent = changePercent + "<span style='color: green;'>" + Math.round(Number(obj.Change) * 100) / 100;
+                        changePercent = changePercent + " ( " + Math.round(Number(obj.ChangePercent) * 100) / 100 + "% )";
+                        changePercent = changePercent + '<img src="http://cs-server.usc.edu:45678/hw/hw8/images/up.png" height="15" width="15">';
+                    } else if (Number(obj.ChangePercent) < 0) {
+                        changePercent = changePercent + "<span style='color: red;'>" + Math.round(Number(obj.Change) * 100) / 100;
+                        changePercent = changePercent + " ( " + Math.round(Number(obj.ChangePercent) * 100) / 100 + "% )";
+                        changePercent = changePercent + '<img src="http://cs-server.usc.edu:45678/hw/hw8/images/down.png" height="15" width="15">';
+                    } else {
+                        changePercent = changePercent + Math.round(Number(obj.Change) * 100) / 100;
+                        changePercent = changePercent + " ( " + Math.round(Number(obj.ChangePercent) * 100) / 100 + "% )";
+                    }
+                    changePercent = changePercent + "</td>";
+                    tableRow.append(changePercent);
+
+                    var marketCap = "<td>";
+                    if (Number(obj.MarketCap) / 1000000000 > 1) {
+                        var b = Number(obj.MarketCap) / 1000000000;
+                        marketCap = marketCap + Math.round(Number(b) * 100) / 100 + " Billion" + "</td>";
+                    } else {
+                        var m = Number(obj.MarketCap) / 1000000;
+                        marketCap = marketCap + Math.round(Number(m) * 100) / 100 + " Million" + "</td>";
+                    }
+                    marketCap = marketCap + "</td>";
+                    tableRow.append(marketCap);
+
+                    tableRow.append('<td class="btnDelete"><a style="color: black; cursor:pointer;"><span class="glyphicon glyphicon-trash"></span> </a></td>');
+                    tableRow.append('</tr>');
+                    $('#tblBookmark').append(tableRow);
+
+                } else {
+                    alert("Local Storage is not supported by your browser.");
+                }
+            }
+        });
+
+        $('#frmStockSearch').submit(function(event) {
+            var txt = $('#txtCompanyName').val();
+            var error = $('#lblInvalidEntry').text();
+            if (txt.length == 0 || error.length != 0) {
+                return false;
+            }
+            loadStockDetails(txt);
+            loadHistoricChart();
+            loadNewsFeeds();
+        });
+
+        $('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
+            if ($(e.target).attr('href') == '#divChart') {
+                if (window.chartData) renderHistoricalChart();
+            }
+        });
+
+        function renderHistoricalChart() {
+            var response = window.chartData;
+            var dates = response.Dates || [];
+            var elements = response.Elements || [];
+            var chartSeries = [];
+
+            if (elements[0]) {
+                for (var i = 0, datLen = dates.length; i < datLen; i++) {
+
+                    var dat = fixDate(dates[i]);
+                    var pointData = [
+                        dat,
+                        elements[0].DataSeries['open'].values[i],
+                        elements[0].DataSeries['high'].values[i],
+                        elements[0].DataSeries['low'].values[i],
+                        elements[0].DataSeries['close'].values[i]
+                    ];
+                    chartSeries.push(pointData);
+                };
+                $('#divChart').highcharts('StockChart', {
+
+                    xAxis: {
+                        type: 'datetime'
+                    },
+                    yAxis: [{
+                        title: {
+                            text: 'Stock Value'
+                        }
+                    }],
+
+
+                    rangeSelector: {
+                        buttons: [{
+                            type: 'week',
+                            count: 1,
+                            text: '1w'
+                        }, {
+                            type: 'month',
+                            count: 1,
+                            text: '1m'
+                        }, {
+                            type: 'month',
+                            count: 3,
+                            text: '3m'
+                        }, {
+                            type: 'month',
+                            count: 6,
+                            text: '6m'
+                        }, {
+                            type: 'ytd',
+                            text: 'YTD'
+                        }, {
+                            type: 'year',
+                            count: 1,
+                            text: '1y'
+                        }, {
+                            type: 'all',
+                            text: 'All'
+                        }],
+                        selected: 0,
+                        inputEnabled: false
+                    },
+
+                    title: {
+                        text: symbolValue + ' ' + 'Stock Price'
+                    },
+
+                    series: [{
+                        name: symbolValue + ' ' + 'Stock Price',
+                        data: chartSeries,
+                        type: 'area',
+                        threshold: null,
+                        tooltip: {
+                            valueDecimals: 2,
+                            valueSuffix: '$'
+                        },
+                        fillColor: {
+                            linearGradient: {
+                                x1: 0,
+                                y1: 0,
+                                x2: 0,
+                                y2: 1
+                            },
+
+                            stops: [
+                                [0, Highcharts.getOptions().colors[0]],
+                                [1, Highcharts.Color(Highcharts.getOptions().colors[0]).setOpacity(0).get('rgba')]
+                            ]
+                        }
+                    }]
+                });
+            } else {
+                $('#divChart').empty();
+                $('#divChart').append('<p><span style="color: red;">' + 'No Chart Data Available.');
+            }
+
+        };
+
+        function loadHistoricChart() {
+
+            $.ajax({
+                url: 'http://stockinfo-1272.appspot.com/stockInfo.php',
+                type: 'GET',
+                data: {
+                    chartSymbol: symbolValue
+                },
+                dataType: 'json',
+                success: function(response, textStatus, jqXHR) {
+                    $('#divChart').empty();
+                    window.chartData = response;
+                    renderHistoricalChart();
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    console.log('error(s):' + textStatus, errorThrown);
+                }
+            });
+
+        }
+
+        function loadNewsFeeds() {
+            $.ajax({
+                url: 'http://stockinfo-1272.appspot.com/stockInfo.php',
+                type: 'GET',
+                data: {
+                    newsFeedsSymbol: symbolValue
+                },
+                dataType: 'json',
+                success: function(response, textStatus, jqXHR) {
+                    $('#divNewsFeeds').empty();
+                    for (var count = 0; count < response.d.results.length; count++) {
+                        var div = $('<div class="well">');
+                        div.append('<a href="' + response.d.results[count].Url + '" target="_blank">' + response.d.results[count].Title + '</a>');
+                        div.append("<p style='margin-top:15px;'>" + response.d.results[count].Description + "</p>");
+                        div.append('<div style="margin-top:25px; margin-bottom:15px;"><strong> Publisher:' + response.d.results[count].Source + '</strong></div>');
+                        div.append('<strong> Date:' + response.d.results[count].Date + '</strong>');
+                        div.append('</div>');
+
+                        $('#divNewsFeeds').append(div);
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    console.log('error(s):' + textStatus, errorThrown);
+                }
+            });
+        }
+
+        function loadStockDetails(txt) {
+            symbolValue = txt;
+            $.ajax({
+                url: "http://stockinfo-1272.appspot.com/stockInfo.php",
+                data: {
+                    symbol: symbolValue
+                },
+                type: 'GET',
+                dataType: 'json',
+                success: function(response, textStatus, jqXHR) {
+                    if (response.Status == 'SUCCESS') {
+                        $('#btnNextSlide').attr('disabled', false);
+                        $("#divStockDetailsTable").empty();
+                        $('#divStockDetailsResultImage').empty();
+
+                        if (localStorage.getItem("favoriteStock")) {
+                            var arr = JSON.parse(localStorage.getItem("favoriteStock"));
+                            var i;
+                            for (i = 0; i < arr.length; i++) {
+                                if (arr[i] == symbolValue) {
+                                    break;
+                                }
+                            }
+                            if (i == arr.length) {
+                                $(".glyphicon-star").css("color", "white");
+                            } else {
+                                $(".glyphicon-star").css("color", "yellow");
+                            }
+                        }
+
+                        stockDetailsForLocalStorage.Symbol = response.Symbol;
+                        stockDetailsForLocalStorage.Name = response.Name;
+                        stockDetailsForLocalStorage.LastPrice = response.LastPrice;
+                        stockDetailsForLocalStorage.Change = response.Change;
+                        stockDetailsForLocalStorage.ChangePercent = response.ChangePercent;
+                        stockDetailsForLocalStorage.MarketCap = response.MarketCap;
+
+                        localStorageJsonString = JSON.stringify(stockDetailsForLocalStorage);
+
+                        var table = $("<table class='table table-striped'><tbody>");
+
+                        table.append("<tr><th>Name</th><td>" + response.Name + "<td></tr>");
+
+                        table.append("<tr><th>Symbol</th><td>" + response.Symbol + "<td></tr>");
+
+                        table.append("<tr><th>Last Price</th><td>" + "$ " + Math.round(Number(response.LastPrice) * 100) / 100 + "<td></tr>");
+
+                        var changePercent = "<tr><th>Change (Change Percent)</th>";
+                        changePercent = changePercent + "<td>";
+                        if (Number(response.ChangePercent) > 0) {
+                            changePercent = changePercent + "<span style='color: green;'>" + Math.round(Number(response.Change) * 100) / 100;
+                            changePercent = changePercent + " ( " + Math.round(Number(response.ChangePercent) * 100) / 100 + "% )" + "</span>";
+                            changePercent = changePercent + '<img src="http://cs-server.usc.edu:45678/hw/hw8/images/up.png" height="15" width="15">';
+                        } else if (Number(response.ChangePercent) < 0) {
+                            changePercent = changePercent + "<span style='color: red;'>" + Math.round(Number(response.Change) * 100) / 100;
+                            changePercent = changePercent + " ( " + Math.round(Number(response.ChangePercent) * 100) / 100 + "% )" + "</span>";
+                            changePercent = changePercent + '<img src="http://cs-server.usc.edu:45678/hw/hw8/images/down.png" height="15" width="15">';
+                        } else {
+                            changePercent = changePercent + Math.round(Number(response.Change) * 100) / 100;
+                            changePercent = changePercent + " ( " + Math.round(Number(response.ChangePercent) * 100) / 100 + "% )";
+                        }
+                        changePercent = changePercent + "</td></tr>";
+                        table.append(changePercent);
+
+                        table.append("<tr><th>Time and Date</th><td>" + moment(new Date(response.Timestamp)).format('DD MMMM YYYY, h:mm:ss a') + "<td></tr>");
+
+                        var marketCap = "<tr><th>Market Cap</th>";
+
+                        if (Number(response.MarketCap) / 1000000000 > 1) {
+                            var b = Number(response.MarketCap) / 1000000000;
+                            marketCap = marketCap + "<td>" + Math.round(Number(b) * 100) / 100 + " Billion" + "</td>";
+                        } else {
+                            var m = Number(response.MarketCap) / 1000000;
+                            marketCap = marketCap + "<td>" + Math.round(Number(m) * 100) / 100 + " Million" + "</td>";
+                        }
+                        marketCap = marketCap + "</td></tr>";
+                        table.append(marketCap);
+
+                        table.append("<tr><th>Volume</th><td>" + response.Volume + "<td></tr>");
+
+                        var changeYTDPercent = "<tr><th>Change YTD (Change Percent YTD)</th>";
+                        changeYTDPercent = changeYTDPercent + "<td>";
+                        if (Number(response.ChangePercentYTD) > 0) {
+                            changeYTDPercent = changeYTDPercent + "<span style='color: green;'>" + Math.round(Number(response.ChangeYTD) * 100) / 100;
+                            changeYTDPercent = changeYTDPercent + " ( " + Math.round(Number(response.ChangePercentYTD) * 100) / 100 + "% )" + "</span>";
+                            changeYTDPercent = changeYTDPercent + '<img src="http://cs-server.usc.edu:45678/hw/hw8/images/up.png" height="15" width="15">';
+                        } else if (Number(response.ChangePercent) < 0) {
+                            changeYTDPercent = changeYTDPercent + "<span style='color: red;'>" + Math.round(Number(response.ChangeYTD) * 100) / 100;
+                            changeYTDPercent = changeYTDPercent + " ( " + Math.round(Number(response.ChangePercentYTD) * 100) / 100 + "% )" + "</span>";
+                            changeYTDPercent = changeYTDPercent + '<img src="http://cs-server.usc.edu:45678/hw/hw8/images/down.png" height="15" width="15">';
+                        } else {
+                            changeYTDPercent = changeYTDPercent + Math.round(Number(response.ChangeYTD) * 100) / 100;
+                            changeYTDPercent = changeYTDPercent + " ( " + Math.round(Number(response.ChangePercentYTD) * 100) / 100 + "% )";
+                        }
+                        changeYTDPercent = changeYTDPercent + "</td></tr>";
+                        table.append(changeYTDPercent);
+
+                        table.append("<tr><th>High Price</th><td>" + "$ " + Math.round(Number(response.High) * 100) / 100 + "<td></tr>");
+
+                        table.append("<tr><th>Low Price</th><td>" + "$ " + Math.round(Number(response.Low) * 100) / 100 + "<td></tr>");
+
+                        table.append("<tr><th>Opening Price</th><td>" + "$ " + Math.round(Number(response.Open) * 100) / 100 + "<td></tr>");
+
+                        table.append("</tbody></table>");
+
+                        $('#divStockDetailsTable').append(table);
+
+                        var image = $("<img style='width:100%;height:100%;' src='http://chart.finance.yahoo.com/t?s=" + symbolValue + "&lang=en-US&width=400&height=300'>");
+                        $('#divStockDetailsResultImage').append(image);
+                        $('#myCarousel').carousel(1);
+                    } else {
+                        $('#lblInvalidEntry').text("No Stock Information Available.");
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    $('#lblInvalidEntry').text("No Stock Information Available.");
+                }
+            });
+        }
+
+        $(document).ready(function() {
+            $("#btnNextSlide").attr('disabled', 'disabled');
+            loadLocalStorage();
+        });
+
+        function ajaxRequest(symbol) {
+            return $.ajax({
+                url: "http://stockinfo-1272.appspot.com/stockInfo.php",
+                data: {
+                    symbol: symbol
+                },
+                type: 'GET',
+                dataType: 'json',
+                success: function(respone) {},
+                error: function(response) {
+                    console.log("Error")
+                }
+            });
+        }
+
+        function fillFavoriteTable() {
+            $('table#tblBookmark tr.bookMarkRow').remove();
+            var arr = JSON.parse(localStorage.getItem("favoriteStock"));
+            if (arr.length == 1) {
+                var obj = arguments[0];
+                var tableRow = $('<tr class="bookMarkRow">');
+                tableRow.append('<td class="one">' + '<a href="#" id="symbolLink" onclick="func(this);">' + obj.Symbol + '</a>' + '</td>');
+                tableRow.append('<td>' + obj.Name + '</td>');
+                tableRow.append('<td class="bookMarkStockPrice">$ ' + obj.LastPrice + '</td>');
+
+                var changePercent = '<td class="bookMarkChangePercent">';
+                if (Number(obj.ChangePercent) > 0) {
+                    changePercent = changePercent + "<span style='color: green;'>" + Math.round(Number(obj.Change) * 100) / 100;
+                    changePercent = changePercent + " ( " + Math.round(Number(obj.ChangePercent) * 100) / 100 + "% )" + "</span>";
+                    changePercent = changePercent + '<img src="http://cs-server.usc.edu:45678/hw/hw8/images/up.png" height="15" width="15">';
+                } else if (Number(obj.ChangePercent) < 0) {
+                    changePercent = changePercent + "<span style='color: red;'>" + Math.round(Number(obj.Change) * 100) / 100;
+                    changePercent = changePercent + " ( " + Math.round(Number(obj.ChangePercent) * 100) / 100 + "% )" + "</span>";
+                    changePercent = changePercent + '<img src="http://cs-server.usc.edu:45678/hw/hw8/images/down.png" height="15" width="15">';
+                } else {
+                    changePercent = changePercent + Math.round(Number(obj.Change) * 100) / 100;
+                    changePercent = changePercent + " ( " + Math.round(Number(obj.ChangePercent) * 100) / 100 + "% )";
+                }
+                changePercent = changePercent + "</td>";
+                tableRow.append(changePercent);
+
+                var marketCap = "<td>";
+                if (Number(obj.MarketCap) / 1000000000 > 1) {
+                    var b = Number(obj.MarketCap) / 1000000000;
+                    marketCap = marketCap + Math.round(Number(b) * 100) / 100 + " Billion" + "</td>";
+                } else {
+                    var m = Number(obj.MarketCap) / 1000000;
+                    marketCap = marketCap + Math.round(Number(m) * 100) / 100 + " Million" + "</td>";
+                }
+                marketCap = marketCap + "</td>";
+                tableRow.append(marketCap);
+
+                tableRow.append('<td class="btnDelete"><a style="color: black; cursor:pointer;"><span class="glyphicon glyphicon-trash"></span> </a></td>');
+                tableRow.append('</tr>');
+                $('#tblBookmark').append(tableRow);
+
+            } else {
+                for (var i = 0; i < arguments.length; i++) {
+                    var objA = arguments[i];
+                    var obj = objA[0];
+                    var tableRow = $('<tr class="bookMarkRow">');
+                    tableRow.append('<td class="one">' + '<a href="#" id="symbolLink" onclick="func(this);">' + obj.Symbol + '</a>' + '</td>');
+                    tableRow.append('<td>' + obj.Name + '</td>');
+                    tableRow.append('<td class="bookMarkStockPrice">$ ' + obj.LastPrice + '</td>');
+
+                    var changePercent = '<td class="bookMarkChangePercent">';
+                    if (Number(obj.ChangePercent) > 0) {
+                        changePercent = changePercent + "<span style='color: green;'>" + Math.round(Number(obj.Change) * 100) / 100;
+                        changePercent = changePercent + " ( " + Math.round(Number(obj.ChangePercent) * 100) / 100 + "% )" + "</span>";
+                        changePercent = changePercent + '<img src="http://cs-server.usc.edu:45678/hw/hw8/images/up.png" height="15" width="15">';
+                    } else if (Number(obj.ChangePercent) < 0) {
+                        changePercent = changePercent + "<span style='color: red;'>" + Math.round(Number(obj.Change) * 100) / 100;
+                        changePercent = changePercent + " ( " + Math.round(Number(obj.ChangePercent) * 100) / 100 + "% )" + "</span>";
+                        changePercent = changePercent + '<img src="http://cs-server.usc.edu:45678/hw/hw8/images/down.png" height="15" width="15">';
+                    } else {
+                        changePercent = changePercent + Math.round(Number(obj.Change) * 100) / 100;
+                        changePercent = changePercent + " ( " + Math.round(Number(obj.ChangePercent) * 100) / 100 + "% )";
+                    }
+                    changePercent = changePercent + "</td>";
+                    tableRow.append(changePercent);
+
+                    var marketCap = "<td>";
+                    if (Number(obj.MarketCap) / 1000000000 > 1) {
+                        var b = Number(obj.MarketCap) / 1000000000;
+                        marketCap = marketCap + Math.round(Number(b) * 100) / 100 + " Billion" + "</td>";
+                    } else {
+                        var m = Number(obj.MarketCap) / 1000000;
+                        marketCap = marketCap + Math.round(Number(m) * 100) / 100 + " Million" + "</td>";
+                    }
+                    marketCap = marketCap + "</td>";
+                    tableRow.append(marketCap);
+
+                    tableRow.append('<td class="btnDelete"><a style="color: black; cursor:pointer;"><span class="glyphicon glyphicon-trash"></span> </a></td>');
+                    tableRow.append('</tr>');
+                    $('#tblBookmark').append(tableRow);
+                }
+            }
+        }
+
+        function loadLocalStorage() {
+            if (localStorage.getItem("favoriteStock")) {
+                var arr = JSON.parse(localStorage.getItem("favoriteStock"));
+                if (arr.length > 0) {
+                    var promises = [];
+                    for (var i = 0; i < arr.length; i++) {
+                        var promise = ajaxRequest(arr[i]);
+                        promises.push(promise);
+                    }
+                    $.when.apply($, promises)
+                        .done(fillFavoriteTable);
+                } else {
+                    $('table#tblBookmark tr.bookMarkRow').remove();
+                }
+            }
+        }
+
+        function refreshStockTable() {
+            $("tr.bookMarkRow").each(function() {
+                var thisRow = $(this);
+                var symbol = thisRow.find(".one #symbolLink").html();
+                var price = thisRow.find(".bookMarkStockPrice").html();
+                $.ajax({
+                    url: "http://stockinfo-1272.appspot.com/stockInfo.php",
+                    data: {
+                        symbol: symbol
+                    },
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function(response, textStatus, jqXHR) {
+                        console.log(thisRow.find(".bookMarkStockPrice").html() + thisRow.find(".bookMarkChangePercent").html());
+                        thisRow.find(".bookMarkStockPrice").html("$ " + response.LastPrice);
+                        var changePercent = "";
+                        if (Number(response.ChangePercent) > 0) {
+                            changePercent = changePercent + "<span style='color: green;'>" + Math.round(Number(response.Change) * 100) / 100;
+                            changePercent = changePercent + " ( " + Math.round(Number(response.ChangePercent) * 100) / 100 + "% )";
+                            changePercent = changePercent + '<img src="http://cs-server.usc.edu:45678/hw/hw8/images/up.png" height="15" width="15">';
+                        } else if (Number(response.ChangePercent) < 0) {
+                            changePercent = changePercent + "<span style='color: red;'>" + Math.round(Number(response.Change) * 100) / 100;
+                            changePercent = changePercent + " ( " + Math.round(Number(response.ChangePercent) * 100) / 100 + "% )";
+                            changePercent = changePercent + '<img src="http://cs-server.usc.edu:45678/hw/hw8/images/down.png" height="15" width="15">';
+                        } else {
+                            changePercent = changePercent + Math.round(Number(response.Change) * 100) / 100;
+                            changePercent = changePercent + " ( " + Math.round(Number(response.ChangePercent) * 100) / 100 + "% )";
+                        }
+                        thisRow.find(".bookMarkChangePercent").html(changePercent);
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+
+                        console.log('error(s):' + textStatus, errorThrown);
+                    }
+                });
+
+            });
+        }
+
+        $("#tblBookmark").on('click', '.btnDelete', function() {
+            // var tr = $(this).closest('tr');
+            var val = $(this).closest('tr').children('td.one').text();
+            var arr = JSON.parse(localStorage.getItem("favoriteStock"));
+            for (var i = arr.length - 1; i >= 0; i--) {
+                if (arr[i] == val) {
+                    arr.splice(i, 1);
+                }
+            }
+            localStorage.removeItem("favoriteStock");
+            localStorage.setItem("favoriteStock", JSON.stringify(arr));
+            $(this).closest('tr').remove();
+        });
+
+        $("#btnNextSlide").click(function(evt) {
+            $('#myCarousel').carousel(1);
+        });
+
+        $("#btnPrevSlide").click(function(evt) {
+            $('#myCarousel').carousel(0);
+        });
+
+        function func(val) {
+            loadStockDetails($(val).text());
+            loadHistoricChart();
+            loadNewsFeeds();
+            //nav nav-pills
+            //var x = $('.nav-pills .active').text();
+        }
+
+    </script>
+
+</body>
+
+</html>
