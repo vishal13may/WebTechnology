@@ -1,0 +1,215 @@
+<html>
+
+<head>
+    <title>Assignment 4</title>
+    <style type="text/css">
+        #formDiv {
+            height: auto;
+            width: 700px;
+            position: fixed;
+            text-align: center;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+    </style>
+</head>
+<script>
+    var xmlDoc;
+    var html_code = "<html><head><title>Assignment 4</title><head><body style=\"margin:0\">";
+    html_code = html_code + "<table width=\"840\" border=\"2\" style=\"margin:0\">";
+
+    function checkXml() {
+        var xmlURL = document.getElementById("xmlURL").value;
+        if (xmlURL.trim().length == 0) { // if input is empty
+            alert('Please enter the XML file URL.');
+            return;
+        }
+        xmlDoc = loadXML(xmlURL);
+        if (typeof xmlDoc === "undefined") {
+            alert("Specified file is not available. Please Check the URL.");
+            return;
+        }
+        // Parser Error
+        if (window.ActiveXObject) {
+            if (xmlDoc.parseError.errorCode != 0) {
+                alert('Error in XML File');
+                return;
+            }
+        } else if (xmlDoc == null) {
+            alert('Error in XML File');
+            return;
+        } else if (xmlDoc.documentElement.nodeName == "parsererror") {
+            alert('Error in XML File');
+            return;
+        }
+
+        var tableTag = xmlDoc.getElementsByTagName('Table');
+        if (tableTag.length == 0) {
+            alert('Data is not available. Please check xml file.');
+            return;
+        }
+        html_code = generateHeaderData(xmlDoc, html_code);
+        html_code = generateRowData(xmlDoc, html_code);
+
+        html_code = html_code + "</table>";
+        html_code = html_code + "</body>";
+        html_code = html_code + "</html>";
+        var hWin = window.open("", "Assignment 4", "height=930,width=850,scrollbars=1");
+        hWin.document.write(html_code);
+    }
+
+    function generateHeaderData(xmlDoc, html_code) {
+        var headerTag = xmlDoc.getElementsByTagName('Header');
+        if (headerTag.length != 1) {
+            alert('Header data is not available. Please check xml file.');
+            return;
+        } else {
+            var headerChild = headerTag[0].childNodes;
+            html_code = html_code + "<tr>";
+            for (var headerChildCount = 0; headerChildCount < headerChild.length; headerChildCount++) {
+                if (headerChild[headerChildCount].nodeName == 'Data') {
+                    html_code = html_code + "<th>"
+                    html_code = html_code + headerChild[headerChildCount].childNodes[0].nodeValue;
+                    html_code = html_code + "</th>"
+                }
+            }
+            html_code = html_code + "</tr>";
+        }
+        return html_code;
+    }
+
+    function generateRowData(xmlDoc, html_code) {
+        var rowTag = xmlDoc.getElementsByTagName('Row');
+        if (rowTag.length == 0) {
+            alert('Radio Stations data is not available. Please check XML file.');
+            return;
+        } else {
+            for (var rowCount = 0; rowCount < rowTag.length; rowCount++) {
+                var rowData = rowTag[rowCount].childNodes;
+                html_code = html_code + "<tr>";
+                for (var rowDataCount = 0; rowDataCount < rowData.length; rowDataCount++) {
+                    if (rowData[rowDataCount].nodeName == 'CallSign') {
+                        html_code = html_code + "<td>";
+                        if (rowData[rowDataCount].childNodes.length == 0) {
+                            html_code = html_code + "N.A";
+                        } else {
+                            if (rowData[rowDataCount].childNodes[0].nodeValue.trim().length == 0) {
+                                html_code = html_code + "N.A";
+                            } else {
+                                html_code = html_code + rowData[rowDataCount].childNodes[0].nodeValue;
+                            }
+                        }
+                        html_code = html_code + "</td>"
+                    } else if (rowData[rowDataCount].nodeName == 'Frequency') {
+                        html_code = html_code + "<td>";
+                        if (rowData[rowDataCount].childNodes.length == 0) {
+                            html_code = html_code + "N.A";
+                        } else {
+                            html_code = html_code + rowData[rowDataCount].childNodes[0].nodeValue;
+                        }
+                        html_code = html_code + "</td>"
+                    } else if (rowData[rowDataCount].nodeName == 'Location') {
+                        html_code = html_code + "<td><ul>"
+                        if (rowData[rowDataCount].childNodes.length == 0) {
+                            html_code = html_code + "<li>"
+                            html_code = html_code + "N.A";
+                            html_code = html_code + "</li>"
+                        } else {
+                            var location = rowData[rowDataCount].childNodes;
+                            for (var locationCount = 0; locationCount < location.length; locationCount++) {
+                                if (location[locationCount].nodeName == 'City') {
+                                    html_code = html_code + "<li>";
+                                    if (location[locationCount].childNodes.length == 0) {
+                                        html_code = html_code + "NA";
+                                    } else {
+                                        html_code = html_code + location[locationCount].childNodes[0].nodeValue;
+                                    }
+                                    html_code = html_code + "</li>"
+                                } else if (location[locationCount].nodeName == 'School') {
+                                    html_code = html_code + "<li>";
+                                    if (location[locationCount].childNodes.length == 0) {
+                                        html_code = html_code + "NA";
+                                    } else {
+                                        html_code = html_code + location[locationCount].childNodes[0].nodeValue;
+                                    }
+                                    html_code = html_code + "</li>"
+                                }
+                            }
+                        }
+                        html_code = html_code + "</ul></td>"
+                    } else if (rowData[rowDataCount].nodeName == 'Format') {
+                        html_code = html_code + "<td>";
+                        if (rowData[rowDataCount].childNodes.length == 0) {
+                            html_code = html_code + "N.A";
+                        } else {
+                            html_code = html_code + rowData[rowDataCount].childNodes[0].nodeValue;
+                        }
+                        html_code = html_code + "</td>"
+                    } else if (rowData[rowDataCount].nodeName == 'HomePage') {
+                        html_code = html_code + "<td>";
+                        if (rowData[rowDataCount].childNodes.length == 0) {
+                            html_code = html_code + "N.A";
+                        } else {
+                            html_code = html_code + "<a href=\"" + rowData[rowDataCount].childNodes[0].nodeValue + "\">";
+                            html_code = html_code + rowData[rowDataCount].childNodes[0].nodeValue + "</a>"
+                        }
+                        html_code = html_code + "</td>"
+                    } else if (rowData[rowDataCount].nodeName == 'Logo') {
+                        html_code = html_code + "<td>"
+                        if (rowData[rowDataCount].childNodes.length == 0) {
+                            html_code = html_code + "N.A";
+                        } else {
+                            html_code = html_code + "<img src=\"" + rowData[rowDataCount].childNodes[0].nodeValue + "\"";
+                            html_code = html_code + " height=\"100%\" width=\"100%\">";
+                        }
+                        html_code = html_code + "</td>";
+                    }
+                }
+                html_code = html_code + "</tr>";
+            }
+        }
+        return html_code;
+    }
+
+    function loadXML(url) {
+        if (window.XMLHttpRequest) {
+            // code for IE7+, Firefox, Chrome, Opera, Safari
+            xmlhttp = new XMLHttpRequest();
+        } else {
+            // code for IE6, IE5
+            xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+        }
+        xmlhttp.open("GET", url, false); //open, send, responseXML are synchronous.
+        try {
+            xmlhttp.send(); //properties of XMLHTTPRequest
+        } catch (err) { // In Mozilla when run without server if file is not present then send method throws exception.
+            return undefined;
+        }
+        if (xmlhttp.status == 200) { // Mozilla, IE, Chrome - Check if file is available or not.
+            xmlDoc = xmlhttp.responseXML;
+            return xmlDoc;
+        } else {
+            return undefined;
+        }
+    }
+
+</script>
+
+<body>
+    <div id="formDiv">
+        <form>
+            Enter URL for Company List XML File
+            <br>
+            <br>
+            <input type="text" id="xmlURL" size="70">
+            <br>
+            <br>
+            <input type="submit" value="Submit Query" onclick="checkXml();">
+        </form>
+    </div>
+    <NOSCRIPT></NOSCRIPT>
+</body>
+
+</html>
